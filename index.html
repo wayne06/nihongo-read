@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>阅读精读</title>
+<style>
+:root {
+  --bg: #f0f2f5; --card: #ffffff; --primary: #7c3aed; --primary-light: #8b5cf6;
+  --green: #16a34a; --red: #dc2626; --orange: #ea580c;
+  --text: #1e293b; --text-muted: #64748b; --border: #e2e8f0; --border-light: #f1f5f9;
+  --radius: 10px; --radius-sm: 6px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans SC","PingFang SC",sans-serif;background:var(--bg);color:var(--text);line-height:1.6;padding:1rem;min-height:100vh}
+.container{max-width:880px;margin:0 auto}
+
+header{background:linear-gradient(135deg,var(--card),#f5f3ff);border-radius:var(--radius);box-shadow:0 1px 3px rgba(0,0,0,.06);padding:1.1rem 1.4rem;margin-bottom:.75rem}
+header h1{font-size:1.15rem;font-weight:700}
+header h1 span{color:var(--primary)}
+header .subtitle{font-size:.78rem;color:var(--text-muted);margin-top:1px}
+
+.id-row{display:flex;gap:.5rem;align-items:center;margin-bottom:.75rem;flex-wrap:wrap}
+.id-row input{flex:1;min-width:150px;padding:.4rem .6rem;font-size:.78rem;border:1.5px solid var(--border);border-radius:6px;font-family:inherit}
+.id-row input:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px rgba(124,58,237,.1)}
+.timer{font-size:.82rem;font-weight:600;color:var(--text-muted);min-width:5em;text-align:center}
+.timer.running{color:var(--primary)}
+
+/* Setup */
+.setup-section{background:var(--card);border-radius:var(--radius);box-shadow:0 1px 3px rgba(0,0,0,.06);padding:1rem;margin-bottom:.75rem}
+.setup-section textarea{width:100%;height:320px;padding:.5rem .6rem;font-size:.85rem;line-height:1.55;border:1.5px solid var(--border);border-radius:6px;resize:vertical;font-family:inherit}
+.setup-section textarea:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px rgba(124,58,237,.1)}
+.setup-section .label{font-size:.78rem;font-weight:600;margin-bottom:.35rem}
+.setup-actions{display:flex;gap:.5rem;margin-top:.5rem;flex-wrap:wrap}
+
+/* Reading mode */
+.read-section{display:none}
+.para-nav{display:flex;justify-content:space-between;align-items:center;margin-bottom:.6rem}
+.para-nav .pn-info{font-size:.78rem;color:var(--text-muted)}
+.para-nav button{font-size:.75rem}
+
+.para-card{background:var(--card);border-radius:var(--radius);box-shadow:0 1px 3px rgba(0,0,0,.06);padding:1rem;margin-bottom:.75rem}
+.para-text{font-size:1rem;line-height:1.8;padding:.5rem .7rem;background:#fafafa;border-radius:6px;user-select:text;cursor:text;color:var(--text)}
+.para-text .word{cursor:pointer;border-radius:2px;padding:0 1px;transition:background .1s}
+.para-text .word:hover{background:#ede9fe}
+.para-text .word.marked{background:#fef3c7;border-bottom:2px solid #f59e0b}
+
+.trans-block{margin-top:.6rem}
+.trans-block label{font-size:.72rem;font-weight:600;color:var(--text-muted);display:block;margin-bottom:.2rem}
+.trans-block textarea{width:100%;height:60px;padding:.4rem .5rem;font-size:.82rem;line-height:1.4;border:1.5px solid var(--border);border-radius:6px;resize:vertical;font-family:inherit}
+.trans-block textarea:focus{outline:none;border-color:var(--primary)}
+
+.actions{display:flex;gap:.5rem;margin-bottom:.75rem;flex-wrap:wrap}
+.btn{padding:.4rem 1rem;border:none;border-radius:6px;font-size:.78rem;font-weight:500;cursor:pointer;transition:all .12s;font-family:inherit;white-space:nowrap}
+.btn-primary{background:var(--primary);color:#fff}
+.btn-primary:hover{background:#6d28d9}
+.btn-save{background:var(--green);color:#fff}
+.btn-save:hover{background:#15803d}
+.btn-outline{background:var(--card);color:var(--text-muted);border:1px solid var(--border)}
+.btn-outline:hover{background:var(--bg);color:var(--text)}
+.btn-small{padding:.25rem .6rem;font-size:.7rem}
+.btn-small.active{background:var(--primary);color:#fff;border-color:var(--primary)}
+
+/* Panels */
+.panel{background:var(--card);border-radius:var(--radius);box-shadow:0 1px 3px rgba(0,0,0,.06);padding:.9rem;margin-bottom:.7rem}
+.panel-title{font-size:.8rem;font-weight:600;margin-bottom:.4rem}
+.panel-content{font-size:.78rem;line-height:1.5}
+
+.word-list{max-height:200px;overflow-y:auto}
+.word-item{display:flex;align-items:center;gap:.4rem;padding:.25rem .4rem;border-radius:4px;cursor:pointer;transition:background .1s;font-size:.78rem}
+.word-item:hover{background:var(--bg)}
+.word-item .wi-word{font-weight:600;color:var(--text);flex:2;min-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.word-item .wi-reading{color:var(--text-muted);font-size:.7rem;flex:1;min-width:60px}
+.word-item .wi-mean{color:var(--text-muted);font-size:.7rem;flex:2;min-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.word-item .wi-del{background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:.65rem;padding:.1rem .25rem}
+.word-item .wi-del:hover{color:var(--red)}
+.word-empty{font-size:.72rem;color:var(--text-muted);text-align:center;padding:.3rem 0}
+
+/* Grammar items */
+
+/* History */
+.history-section{margin-top:.7rem}
+.history-header{display:flex;justify-content:space-between;align-items:center;cursor:pointer;user-select:none}
+.history-header .title{font-size:.8rem;font-weight:600}
+.history-header .count{font-size:.7rem;color:var(--text-muted)}
+.history-header .arrow{font-size:.5rem;color:var(--text-muted);transition:transform .2s}
+.history-header.collapsed .arrow{transform:rotate(-90deg)}
+.history-body{transition:max-height .25s;max-height:2000px;overflow:hidden}
+.history-body.collapsed{max-height:0}
+.history-item{display:flex;align-items:center;gap:.5rem;padding:.35rem .5rem;border-bottom:1px solid var(--border-light);cursor:pointer;transition:background .1s}
+.history-item:hover{background:var(--bg)}
+.hi-id{font-weight:600;font-size:.76rem;color:var(--primary);min-width:100px;flex-shrink:0}
+.hi-date{font-size:.66rem;color:var(--text-muted);min-width:65px}
+.hi-preview{font-size:.72rem;color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0}
+.hi-del{background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:.68rem;padding:.1rem .25rem;border-radius:3px}
+.hi-del:hover{background:#fef2f2;color:var(--red)}
+
+
+.history-filters{display:flex;gap:.4rem;align-items:center;padding:.3rem 0 .5rem;flex-wrap:wrap}
+.history-filters select{font-size:.7rem;padding:.2rem .35rem;border:1.5px solid var(--border);border-radius:4px;background:var(--card);color:var(--text);font-family:inherit}
+.history-filters .filter-clear{font-size:.65rem;color:var(--text-muted);cursor:pointer;margin-left:.2rem}
+.history-filters .filter-clear:hover{color:var(--primary)}
+.hist-group{margin-top:.15rem}
+.hist-group-title{font-size:.72rem;font-weight:600;color:var(--text-muted);padding:.3rem .5rem;cursor:pointer;display:flex;gap:.4rem;align-items:center;user-select:none;border-radius:4px}
+.hist-group-title:hover{background:var(--bg)}
+.hist-group-title .g-arrow{font-size:.5rem;transition:transform .2s}
+.hist-group-title.collapsed .g-arrow{transform:rotate(-90deg)}
+.hist-group-title .g-tag{font-size:.62rem;padding:0 .35rem;border-radius:3px;font-weight:500}
+.g-tag.level{background:#ede9fe;color:var(--primary)}
+.g-tag.type{background:#f0fdf4;color:#15803d}
+.hist-group-body{overflow:hidden;max-height:2000px;transition:max-height .25s}
+.hist-group-body.collapsed{max-height:0}
+@media(max-width:640px){body{padding:.5rem}.para-text{font-size:.92rem}}
+
+.vocab-float{position:fixed;z-index:100;background:var(--card);border:2px solid var(--primary);border-radius:8px;padding:.6rem;box-shadow:0 4px 16px rgba(0,0,0,.12);min-width:260px;max-width:320px;font-size:.75rem}
+.vf-row{display:flex;gap:.35rem;align-items:center;margin-bottom:.35rem}
+.vf-label{font-weight:600;white-space:nowrap;font-size:.72rem;color:var(--text)}
+.vf-word{font-weight:600;color:var(--primary);font-size:.82rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.vf-actions{display:flex;gap:.35rem;margin-top:.4rem;justify-content:flex-end}
+</style>
+</head>
+<body>
+<div class="container">
+
+<header>
+  <h1>📖 阅读精读 <span>+ 生词本</span></h1>
+  <div class="subtitle">粘贴原文 → 逐段精读 → 标记生词 → 记录语法</div>
+</header>
+
+<div class="id-row">
+  <input id="articleId" placeholder="文章编号，如 2025-N1-読解1">
+  <span class="timer" id="timerDisplay">⏱ 00:00</span>
+  <button class="btn btn-small btn-outline" id="timerBtn" onclick="toggleTimer()">开始计时</button>
+</div>
+
+<!-- Setup -->
+<div class="setup-section" id="setupSection">
+  <div class="label">📄 粘贴文章原文：</div>
+  <textarea id="articleInput" placeholder="将日文文章粘贴到这里…"></textarea>
+  <div class="setup-actions">
+    <button class="btn btn-primary" onclick="startReading()">开始阅读</button>
+  </div>
+</div>
+
+<!-- Reading mode -->
+<div class="read-section" id="readSection">
+
+
+  <div class="para-card">
+    <div class="para-text" id="paraText" onmouseup="onTextSelect(event)"></div>
+    <div id="vocabFloat" class="vocab-float" style="display:none">
+      <div class="vf-row"><span class="vf-label">📕 生词</span><span id="vfWord" class="vf-word"></span></div>
+      <div class="vf-row">
+        <input id="vfReading" placeholder="读音" style="flex:1;padding:.25rem .35rem;font-size:.72rem;border:1.5px solid var(--border);border-radius:3px">
+        <input id="vfMeaning" placeholder="释义" style="flex:1;padding:.25rem .35rem;font-size:.72rem;border:1.5px solid var(--border);border-radius:3px">
+      </div>
+      <div class="vf-actions">
+        <button class="btn btn-small btn-primary" onclick="addFloatVocab()">添加</button>
+        <button class="btn btn-small btn-outline" onclick="document.getElementById('vocabFloat').style.display='none'">✕</button>
+      </div>
+    </div>
+    <div class="trans-block">
+      <label>✍️ 你的翻译</label>
+      <textarea id="transInput" placeholder="写下你的翻译…"></textarea>
+    </div>
+  </div>
+
+  <div id="answerCard" style="display:none;margin-top:.5rem">
+    <div style="display:flex;gap:.5rem;align-items:center">
+      <input id="answerInput" placeholder="在此输入正确答案…" style="flex:1;padding:.4rem .5rem;font-size:.82rem;border:1.5px solid var(--border);border-radius:6px;font-family:inherit">
+      <button class="btn btn-primary" onclick="saveAnswer()" id="answerSaveBtn" style="padding:.4rem .8rem;font-size:.78rem;white-space:nowrap">💾 保存答案</button>
+    </div>
+  </div>
+
+  <div class="actions">
+    <button class="btn btn-outline" onclick="toggleAnswer()">👁 显示答案</button>
+    <button class="btn btn-save" onclick="saveArticle()" id="saveBtn">💾 保存文章</button>
+    <button class="btn btn-outline" onclick="exportData()">📤 导出备份</button>
+    <button class="btn btn-outline" onclick="importData()">📥 导入备份</button>
+  </div>
+</div>
+
+<!-- Vocabulary & Grammar -->
+<div class="panel">
+    <div class="panel-title">📕 生词本 <span id="vocabCount" style="font-weight:400;font-size:.7rem;color:var(--text-muted)">(0)</span></div>
+    <div style="display:flex;gap:.35rem;margin-bottom:.4rem;flex-wrap:wrap">
+      <input id="vocabInput" placeholder="输入生词" style="flex:2;min-width:80px;padding:.3rem .4rem;font-size:.75rem;border:1.5px solid var(--border);border-radius:4px;font-family:inherit">
+      <input id="readingInput" placeholder="读音" style="flex:1;min-width:60px;padding:.3rem .4rem;font-size:.75rem;border:1.5px solid var(--border);border-radius:4px;font-family:inherit">
+      <input id="meaningInput" placeholder="释义" style="flex:2;min-width:80px;padding:.3rem .4rem;font-size:.75rem;border:1.5px solid var(--border);border-radius:4px;font-family:inherit">
+      <button class="btn btn-small btn-primary" onclick="addVocab()">添加</button>
+    </div>
+    <div class="word-list" id="vocabList"><div class="word-empty">暂无生词</div></div>
+</div>
+
+
+
+<!-- History -->
+<div class="panel history-section">
+  <div class="history-header" onclick="toggleHistory()">
+    <span class="title">📋 历史记录</span>
+    <span class="count" id="historyCount">0 条</span>
+    <span class="arrow">▼</span>
+  </div>
+  <div class="history-body" id="historyBody">
+
+    <div class="history-filters" id="historyFilters">
+      <select id="filterLevel" onchange="renderHistory()">
+        <option value="">所有等级</option>
+      </select>
+      <select id="filterYear" onchange="renderHistory()">
+        <option value="">所有年月</option>
+      </select>
+      <span class="filter-clear" onclick="clearFilters()">重置</span>
+    </div>
+    <div id="historyList"></div>
+  </div>
+</div>
+
+</div>
+
+<script>
+let paragraphs = [];
+let currentPara = 0;
+let vocab = []; // {word, reading, meaning}
+let grammar = []; // {point, note}
+let timerInterval = null;
+let seconds = 0;
+
+// ============ Setup ============
+function startReading() {
+  var text = document.getElementById('articleInput').value;
+  document.getElementById('setupSection').style.display = 'block';
+  document.getElementById('readSection').style.display = 'block';
+  var el = document.getElementById('paraText');
+  el.innerHTML = escHtml(text).replace(/\n/g, '<br>');
+  document.getElementById('paraInfo').style.display = 'none';
+}
+
+function escHtml(s) {
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+function esc(s){return escHtml(s);}
+
+// ============ Word Selection ============
+let lastSelectedText = '';
+
+
+function renderVocab() {
+  const list = document.getElementById('vocabList');
+  if (vocab.length === 0) {
+    list.innerHTML = '<div class="word-empty">暂无生词</div>';
+    return;
+  }
+  list.innerHTML = vocab.map((v, i) =>
+    '<div class="word-item">'
+    + '<span class="wi-word">' + escHtml(v.word) + '</span>'
+    + '<span class="wi-reading">' + escHtml(v.reading || '-') + '</span>'
+    + '<span class="wi-mean">' + escHtml(v.meaning || '-') + '</span>'
+    + '<button class="wi-del" onclick="deleteVocab(' + i + ')">✕</button>'
+    + '</div>'
+  ).join('');
+}
+
+function deleteVocab(idx) {
+  vocab.splice(idx, 1);
+  // render removed
+  renderVocab();
+  document.getElementById('vocabCount').textContent = '(' + vocab.length + ')';
+}
+
+// ============ Grammar ============
+
+// ============ Navigation ============
+
+
+
+
+// ============ Timer ============
+function toggleTimer() {
+  const btn = document.getElementById('timerBtn');
+  if (timerInterval) {
+    clearInterval(timerInterval);
+    timerInterval = null;
+    btn.textContent = '继续计时';
+    document.getElementById('timerDisplay').classList.remove('running');
+  } else {
+    timerInterval = setInterval(() => {
+      seconds++;
+      updateTimerDisplay();
+    }, 1000);
+    btn.textContent = '暂停';
+    document.getElementById('timerDisplay').classList.add('running');
+  }
+}
+
+function updateTimerDisplay() {
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  document.getElementById('timerDisplay').textContent = '⏱ ' + (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
+}
+
+// ============ Save / Load / Finish ============
+function getHistory() { try { return JSON.parse(localStorage.getItem('reading_history') || '[]'); } catch(e) { return []; } }
+function setHistory(d) { try { localStorage.setItem('reading_history', JSON.stringify(d)); } catch(e) {} }
+
+function saveVocab(){
+  var id=document.getElementById('articleId').value.trim();
+  if(!id)return;
+  var h=JSON.parse(localStorage.getItem('reading_vocab')||'{}');
+  h[id]=vocab;
+  localStorage.setItem('reading_vocab',JSON.stringify(h));
+}
+function onTextSelect(e) {
+  setTimeout(function(){
+    var sel = window.getSelection();
+    if(!sel || sel.isCollapsed) return;
+    var text = sel.toString().trim();
+    if(!text || text.length > 30) return;
+    var f = document.getElementById('vocabFloat');
+    document.getElementById('vfWord').textContent = text;
+    document.getElementById('vfReading').value = '';
+    document.getElementById('vfMeaning').value = '';
+    f.style.display = 'block';
+    // Position near mouse
+    var top = e.clientY + 10;
+    var left = e.clientX - 130;
+    if(top + 160 > window.innerHeight) top = e.clientY - 170;
+    if(left < 10) left = 10;
+    if(left + 330 > window.innerWidth) left = window.innerWidth - 340;
+    f.style.top = top + 'px';
+    f.style.left = left + 'px';
+  }, 10);
+}
+
+function addFloatVocab() {
+  var w = document.getElementById('vfWord').textContent;
+  var r = document.getElementById('vfReading').value.trim();
+  var m = document.getElementById('vfMeaning').value.trim();
+  if(!w) return;
+  if(vocab.some(function(v){return v.word===w;})) return;
+  vocab.push({word:w, reading:r, meaning:m});
+  renderVocab();
+  document.getElementById('vocabCount').textContent='('+vocab.length+')';
+  saveVocab();
+  document.getElementById('vocabFloat').style.display = 'none';
+}
+function addVocab() {
+  var w=document.getElementById('vocabInput').value.trim();
+  var r=document.getElementById('readingInput').value.trim();
+  var m=document.getElementById('meaningInput').value.trim();
+  if(!w){return;}
+  if(vocab.some(function(v){return v.word===w;})){return;}
+  vocab.push({word:w,reading:r,meaning:m});
+  document.getElementById('vocabInput').value='';document.getElementById('readingInput').value='';document.getElementById('meaningInput').value='';
+  renderVocab();
+  document.getElementById('vocabCount').textContent='('+vocab.length+')';
+  saveVocab();
+  document.getElementById('vocabFloat').style.display='none';
+}
+
+function saveArticle() {
+  const id = document.getElementById('articleId').value.trim();
+  if (!id) { alert('请输入文章编号'); return; }
+  if (paragraphs.length === 0 && !document.getElementById('articleInput').value.trim()) { return; }
+
+  const record = {
+    id: id,
+    paragraphs: paragraphs,
+    fullText: document.getElementById('articleInput').value,
+    vocab: vocab,
+    seconds: seconds,
+    date: new Date().toLocaleDateString('zh-CN'),
+    timestamp: Date.now()
+  };
+  const h = getHistory();
+  const idx = h.findIndex(x => x.id === id);
+  if (idx >= 0) { record.timestamp = h[idx].timestamp; h[idx] = record; } else { h.unshift(record); }
+  setHistory(h);
+  renderHistory();
+  var sb=document.getElementById('saveBtn');if(sb){sb.innerHTML='✅ 已保存';setTimeout(function(){sb.innerHTML='💾 保存文章';},1000);}
+  
+}
+
+function loadArticle(rec) {
+  document.getElementById('articleId').value = rec.id;
+  paragraphs = rec.paragraphs || [];
+  vocab = rec.vocab || [];
+  seconds = rec.seconds || 0;
+  updateTimerDisplay();
+  document.getElementById('setupSection').style.display = 'block';
+  document.getElementById('readSection').style.display = 'block';
+  var text = rec.fullText || (rec.paragraphs||[]).join('\n') || '';
+  document.getElementById('articleInput').value = text;
+  document.getElementById('paraText').innerHTML = escHtml(text).replace(/\n/g, '<br>');
+  document.getElementById('vocabCount').textContent = '(' + vocab.length + ')';
+  if(rec.translation) document.getElementById('transInput').value = rec.translation;
+  var vh=JSON.parse(localStorage.getItem('reading_vocab')||'{}');
+  if(vh[rec.id]){vocab=vh[rec.id];}
+  renderVocab();
+  document.getElementById('vocabCount').textContent='('+vocab.length+')';
+  var ah=JSON.parse(localStorage.getItem('reading_answers')||'{}');
+  if(ah[rec.id]){document.getElementById('answerInput').value=ah[rec.id];}
+}
+function deleteRecord(id) {
+  setHistory(getHistory().filter(r => r.id !== id));
+  renderHistory();
+}
+
+function parseId(id) {
+  var m = id.match(/^(\d{4}-\d{2})-(N\d)-(.+)$/);
+  if (!m) return { ym: '', level: '', num: id };
+  return { ym: m[1], level: m[2], num: m[3] };
+}
+
+function updateFilterOptions(records) {
+  var yms = {}; var levels = {};
+  records.forEach(function(r) {
+    var p = parseId(r.id);
+    if (p.ym) yms[p.ym] = 1;
+    if (p.level) levels[p.level] = 1;
+  });
+  var populate = function(selId, values, sortFn) {
+    var sel = document.getElementById(selId);
+    var cur = sel.value;
+    sel.innerHTML = sel.options[0].outerHTML;
+    var sorted = sortFn ? Object.keys(values).sort(sortFn) : Object.keys(values).sort();
+    sorted.forEach(function(v) {
+      var o = document.createElement('option'); o.value = v; o.textContent = v; sel.appendChild(o);
+    });
+    sel.value = cur;
+  };
+  populate('filterYear', yms, function(a, b) { return b.localeCompare(a); });
+  populate('filterLevel', levels);
+}
+
+function getFilters() {
+  return {
+    ym: document.getElementById('filterYear').value,
+    level: document.getElementById('filterLevel').value
+  };
+}
+
+function clearFilters() {
+  document.getElementById('filterYear').value = '';
+  document.getElementById('filterLevel').value = '';
+  renderHistory();
+}
+
+
+function countInLevel(lv) {
+  var total = 0;
+  Object.keys(lv).forEach(function(ym) {
+    Object.keys(lv[ym]).forEach(function(nm) { total += lv[ym][nm].length; });
+  });
+  return '<span style="font-size:.65rem;color:var(--text-muted);margin-left:.2rem">' + total + ' 条</span>';
+}
+
+function countInSub(sub) {
+  var total = 0;
+  Object.keys(sub).forEach(function(nm) { total += sub[nm].length; });
+  return '<span style="font-size:.62rem;color:var(--text-muted);margin-left:.2rem">' + total + ' 条</span>';
+}
+function toggleGroup(gid) {
+  var body = document.getElementById(gid);
+  if (!body) return;
+  body.classList.toggle('collapsed');
+  var title = body.previousElementSibling;
+  if (title) title.classList.toggle('collapsed');
+}
+function loadHistoryById(id) {
+  var h = getHistory();
+  var rec = h.find(function(x) { return x.id === id; });
+  if (rec) loadArticle(rec);
+}
+
+function deleteHistoryById(id) {
+  setHistory(getHistory().filter(function(r) { return r.id !== id; }));
+  renderHistory();
+}
+
+function renderHistory() {
+  var h = getHistory();
+  document.getElementById('historyCount').textContent = h.length + ' 条';
+  updateFilterOptions(h);
+  var filters = getFilters();
+  var list = document.getElementById('historyList');
+  if (h.length === 0) { list.innerHTML = '<div class="word-empty">暂无记录</div>'; return; }
+  var filtered = h;
+  if (filters.ym || filters.level) {
+    filtered = h.filter(function(r) {
+      var p = parseId(r.id);
+      if (filters.ym && p.ym !== filters.ym) return false;
+      if (filters.level && p.level !== filters.level) return false;
+      return true;
+    });
+  }
+  var groups = {};
+  filtered.forEach(function(r) {
+    var p = parseId(r.id);
+    var lv = p.level || '未分类';
+    var ym = p.ym || '未分类';
+    var nm = p.num || '其他';
+    if (!groups[lv]) groups[lv] = {};
+    if (!groups[lv][ym]) groups[lv][ym] = {};
+    if (!groups[lv][ym][nm]) groups[lv][ym][nm] = [];
+    groups[lv][ym][nm].push(r);
+  });
+  var levelOrder = ['N1', 'N2', 'N3', 'N4', 'N5', '未分类'];
+  var html = '';
+  levelOrder.forEach(function(lv) {
+    if (!groups[lv]) return;
+    var lvgid = "glv_" + lv;
+    html += '<div class="hist-group">'
+      + '<div class="hist-group-title" onclick="toggleGroup(\'' + lvgid + '\')">'
+      + '<span class="g-arrow">▼</span>'
+      + '<span class="g-tag level">' + escHtml(lv) + '</span>'
+      + countInLevel(groups[lv])
+      + '</div>'
+      + '<div class="hist-group-body" id="' + lvgid + '">';
+    var ymMap = groups[lv];
+    Object.keys(ymMap).sort(function(a,b){return b.localeCompare(a)}).forEach(function(ym) {
+      var ymgid = "gym_" + lv + "_" + ym;
+      html += '<div class="hist-group" style="margin-left:.8rem">'
+        + '<div class="hist-group-title" onclick="toggleGroup(\'' + ymgid + '\')" style="font-size:.7rem">'
+        + '<span class="g-arrow">▼</span>'
+        + '<span class="g-tag type">' + escHtml(ym) + '</span>'
+        + countInSub(ymMap[ym])
+        + '</div>'
+        + '<div class="hist-group-body" id="' + ymgid + '">';
+      var items = [];
+      Object.keys(ymMap[ym]).sort().forEach(function(nm) {
+        ymMap[ym][nm].forEach(function(r) { items.push(r); });
+      });
+      items.forEach(function(r) {
+        html += '<div class="history-item" onclick="loadHistoryById(' + JSON.stringify(r.id) + ')">'
+          + '<span class="hi-id">' + escHtml(r.id) + '</span>'
+          + '<span class="hi-date">' + (r.date||'') + '</span>'
+          + '<span class="hi-preview">' + escHtml((r.paragraphs?.[0]||'').substring(0,25)) + '</span>'
+          + '<button class="hi-del" onclick="event.stopPropagation();deleteHistoryById(' + JSON.stringify(r.id) + ')">✕</button>'
+          + '</div>';
+      });
+      html += '</div></div>';
+    });
+    html += '</div></div>';
+  });
+  list.innerHTML = html;
+}
+
+function toggleAnswer(){
+  var c=document.getElementById('answerCard');
+  var b=document.querySelector('button[onclick*=toggleAnswer]');
+  if(c.style.display==='none'){c.style.display='block';b.textContent='👁 隐藏答案';}else{c.style.display='none';b.textContent='👁 显示答案';}
+}
+function saveAnswer(){
+  var a=document.getElementById('answerInput').value;
+  var id=document.getElementById('articleId').value.trim()||'default';
+  var h=JSON.parse(localStorage.getItem('reading_answers')||'{}');
+  h[id]=a;
+  localStorage.setItem('reading_answers',JSON.stringify(h));
+  var sb=document.getElementById('answerSaveBtn');if(sb){sb.innerHTML='✅ 已保存';var tb=document.querySelector('button[onclick*=toggleAnswer]');setTimeout(function(){sb.innerHTML='💾 保存答案';document.getElementById('answerCard').style.display='none';if(tb)tb.innerHTML='👁 显示答案';},1000);}
+}
+
+function toggleHistory() {
+  document.querySelector('.history-header').classList.toggle('collapsed');
+  document.getElementById('historyBody').classList.toggle('collapsed');
+}
+
+function exportData(){
+  var data = {};
+  for(var k in localStorage){
+    if(k.indexOf('reading_')===0){data[k]=localStorage.getItem(k);}
+  }
+  data._exportDate = new Date().toISOString();
+  var blob = new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'nihongo-backup-read-' + new Date().toISOString().slice(0,10) + '.json';
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+function importData(){
+  var inp = document.createElement('input');
+  inp.type = 'file';
+  inp.accept = '.json';
+  inp.onchange = function(e){
+    var f = e.target.files[0];
+    if(!f) return;
+    var r = new FileReader();
+    r.onload = function(ev){
+      try{
+        var d = JSON.parse(ev.target.result);
+        for(var k in d){
+          if(k!=='_exportDate') localStorage.setItem(k, d[k]);
+        }
+        alert('导入成功，页面即将刷新');
+        location.reload();
+      }catch(err){alert('文件格式错误');}
+    };
+    r.readAsText(f);
+  };
+  inp.click();
+}
+
+
+renderHistory();
+</script>
+</body>
+</html>
