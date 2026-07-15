@@ -110,6 +110,12 @@ header .subtitle{font-size:.78rem;color:var(--text-muted);margin-top:1px}
 .hist-group-body.collapsed{max-height:0}
 
 
+
+.vocab-float{position:fixed;z-index:100;background:var(--card);border:2px solid var(--primary);border-radius:8px;padding:.6rem;box-shadow:0 4px 16px rgba(0,0,0,.12);min-width:260px;max-width:320px;font-size:.75rem}
+.vf-row{display:flex;gap:.35rem;align-items:center;margin-bottom:.35rem}
+.vf-label{font-weight:600;white-space:nowrap;font-size:.72rem;color:var(--text)}
+.vf-word{font-weight:600;color:var(--primary);font-size:.82rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.vf-actions{display:flex;gap:.35rem;margin-top:.4rem;justify-content:flex-end}
 @media(max-width:640px){body{padding:.5rem}.para-text{font-size:.92rem}}
 </style>
 </head>
@@ -141,7 +147,20 @@ header .subtitle{font-size:.78rem;color:var(--text-muted);margin-top:1px}
 
 
   <div class="para-card">
-    <div class="para-text" id="paraText"></div>
+    <div class="para-text" id="paraText" onmouseup="onTextSelect(event)"></div>
+    
+    <div id="vocabFloat" class="vocab-float" style="display:none">
+      <div class="vf-row"><span class="vf-label">📕 生词</span><span id="vfWord" class="vf-word"></span></div>
+      <div class="vf-row">
+        <input id="vfReading" placeholder="读音" style="flex:1;padding:.25rem .35rem;font-size:.72rem;border:1.5px solid var(--border);border-radius:3px">
+        <input id="vfMeaning" placeholder="释义" style="flex:1;padding:.25rem .35rem;font-size:.72rem;border:1.5px solid var(--border);border-radius:3px">
+      </div>
+      <div class="vf-actions">
+        <button class="btn btn-small btn-primary" onclick="addFloatVocab()">添加</button>
+        <button class="btn btn-small btn-outline" onclick="document.getElementById('vocabFloat').style.display='none'">✕</button>
+      </div>
+    </div>
+
     <div class="trans-block">
       <label>✍️ 你的翻译</label>
       <textarea id="transInput" placeholder="写下你的翻译…"></textarea>
@@ -287,6 +306,40 @@ function updateTimerDisplay() {
 // ============ Save / Load / Finish ============
 function getHistory() { try { return JSON.parse(localStorage.getItem('reading_history') || '[]'); } catch(e) { return []; } }
 function setHistory(d) { try { localStorage.setItem('reading_history', JSON.stringify(d)); } catch(e) {} }
+
+function onTextSelect(e) {
+  setTimeout(function(){
+    var sel = window.getSelection();
+    if(!sel || sel.isCollapsed) return;
+    var text = sel.toString().trim();
+    if(!text || text.length > 30) return;
+    var f = document.getElementById('vocabFloat');
+    document.getElementById('vfWord').textContent = text;
+    document.getElementById('vfReading').value = '';
+    document.getElementById('vfMeaning').value = '';
+    f.style.display = 'block';
+    var top = e.clientY + 10;
+    var left = e.clientX - 130;
+    if(top + 160 > window.innerHeight) top = e.clientY - 170;
+    if(left < 10) left = 10;
+    if(left + 330 > window.innerWidth) left = window.innerWidth - 340;
+    f.style.top = top + 'px';
+    f.style.left = left + 'px';
+  }, 10);
+}
+
+function addFloatVocab() {
+  var w = document.getElementById('vfWord').textContent;
+  var r = document.getElementById('vfReading').value.trim();
+  var m = document.getElementById('vfMeaning').value.trim();
+  if(!w) return;
+  if(vocab.some(function(v){return v.word===w;})) return;
+  vocab.push({word:w, reading:r, meaning:m});
+  renderVocab();
+  document.getElementById('vocabCount').textContent='('+vocab.length+')';
+  saveVocab();
+  document.getElementById('vocabFloat').style.display = 'none';
+}
 
 function saveVocab(){
   var id=document.getElementById('articleId').value.trim();
