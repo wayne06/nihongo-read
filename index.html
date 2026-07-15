@@ -94,8 +94,6 @@ header .subtitle{font-size:.78rem;color:var(--text-muted);margin-top:1px}
 .hi-preview{font-size:.72rem;color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0}
 .hi-del{background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:.68rem;padding:.1rem .25rem;border-radius:3px}
 .hi-del:hover{background:#fef2f2;color:var(--red)}
-
-
 .history-filters{display:flex;gap:.4rem;align-items:center;padding:.3rem 0 .5rem;flex-wrap:wrap}
 .history-filters select{font-size:.7rem;padding:.2rem .35rem;border:1.5px solid var(--border);border-radius:4px;background:var(--card);color:var(--text);font-family:inherit}
 .history-filters .filter-clear{font-size:.65rem;color:var(--text-muted);cursor:pointer;margin-left:.2rem}
@@ -110,13 +108,9 @@ header .subtitle{font-size:.78rem;color:var(--text-muted);margin-top:1px}
 .g-tag.type{background:#f0fdf4;color:#15803d}
 .hist-group-body{overflow:hidden;max-height:2000px;transition:max-height .25s}
 .hist-group-body.collapsed{max-height:0}
-@media(max-width:640px){body{padding:.5rem}.para-text{font-size:.92rem}}
 
-.vocab-float{position:fixed;z-index:100;background:var(--card);border:2px solid var(--primary);border-radius:8px;padding:.6rem;box-shadow:0 4px 16px rgba(0,0,0,.12);min-width:260px;max-width:320px;font-size:.75rem}
-.vf-row{display:flex;gap:.35rem;align-items:center;margin-bottom:.35rem}
-.vf-label{font-weight:600;white-space:nowrap;font-size:.72rem;color:var(--text)}
-.vf-word{font-weight:600;color:var(--primary);font-size:.82rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.vf-actions{display:flex;gap:.35rem;margin-top:.4rem;justify-content:flex-end}
+
+@media(max-width:640px){body{padding:.5rem}.para-text{font-size:.92rem}}
 </style>
 </head>
 <body>
@@ -147,18 +141,7 @@ header .subtitle{font-size:.78rem;color:var(--text-muted);margin-top:1px}
 
 
   <div class="para-card">
-    <div class="para-text" id="paraText" onmouseup="onTextSelect(event)"></div>
-    <div id="vocabFloat" class="vocab-float" style="display:none">
-      <div class="vf-row"><span class="vf-label">📕 生词</span><span id="vfWord" class="vf-word"></span></div>
-      <div class="vf-row">
-        <input id="vfReading" placeholder="读音" style="flex:1;padding:.25rem .35rem;font-size:.72rem;border:1.5px solid var(--border);border-radius:3px">
-        <input id="vfMeaning" placeholder="释义" style="flex:1;padding:.25rem .35rem;font-size:.72rem;border:1.5px solid var(--border);border-radius:3px">
-      </div>
-      <div class="vf-actions">
-        <button class="btn btn-small btn-primary" onclick="addFloatVocab()">添加</button>
-        <button class="btn btn-small btn-outline" onclick="document.getElementById('vocabFloat').style.display='none'">✕</button>
-      </div>
-    </div>
+    <div class="para-text" id="paraText"></div>
     <div class="trans-block">
       <label>✍️ 你的翻译</label>
       <textarea id="transInput" placeholder="写下你的翻译…"></textarea>
@@ -202,7 +185,6 @@ header .subtitle{font-size:.78rem;color:var(--text-muted);margin-top:1px}
     <span class="arrow">▼</span>
   </div>
   <div class="history-body" id="historyBody">
-
     <div class="history-filters" id="historyFilters">
       <select id="filterLevel" onchange="renderHistory()">
         <option value="">所有等级</option>
@@ -212,6 +194,7 @@ header .subtitle{font-size:.78rem;color:var(--text-muted);margin-top:1px}
       </select>
       <span class="filter-clear" onclick="clearFilters()">重置</span>
     </div>
+
     <div id="historyList"></div>
   </div>
 </div>
@@ -312,40 +295,6 @@ function saveVocab(){
   h[id]=vocab;
   localStorage.setItem('reading_vocab',JSON.stringify(h));
 }
-function onTextSelect(e) {
-  setTimeout(function(){
-    var sel = window.getSelection();
-    if(!sel || sel.isCollapsed) return;
-    var text = sel.toString().trim();
-    if(!text || text.length > 30) return;
-    var f = document.getElementById('vocabFloat');
-    document.getElementById('vfWord').textContent = text;
-    document.getElementById('vfReading').value = '';
-    document.getElementById('vfMeaning').value = '';
-    f.style.display = 'block';
-    // Position near mouse
-    var top = e.clientY + 10;
-    var left = e.clientX - 130;
-    if(top + 160 > window.innerHeight) top = e.clientY - 170;
-    if(left < 10) left = 10;
-    if(left + 330 > window.innerWidth) left = window.innerWidth - 340;
-    f.style.top = top + 'px';
-    f.style.left = left + 'px';
-  }, 10);
-}
-
-function addFloatVocab() {
-  var w = document.getElementById('vfWord').textContent;
-  var r = document.getElementById('vfReading').value.trim();
-  var m = document.getElementById('vfMeaning').value.trim();
-  if(!w) return;
-  if(vocab.some(function(v){return v.word===w;})) return;
-  vocab.push({word:w, reading:r, meaning:m});
-  renderVocab();
-  document.getElementById('vocabCount').textContent='('+vocab.length+')';
-  saveVocab();
-  document.getElementById('vocabFloat').style.display = 'none';
-}
 function addVocab() {
   var w=document.getElementById('vocabInput').value.trim();
   var r=document.getElementById('readingInput').value.trim();
@@ -357,9 +306,7 @@ function addVocab() {
   renderVocab();
   document.getElementById('vocabCount').textContent='('+vocab.length+')';
   saveVocab();
-  document.getElementById('vocabFloat').style.display='none';
 }
-
 function saveArticle() {
   const id = document.getElementById('articleId').value.trim();
   if (!id) { alert('请输入文章编号'); return; }
@@ -404,6 +351,7 @@ function loadArticle(rec) {
   if(ah[rec.id]){document.getElementById('answerInput').value=ah[rec.id];}
 }
 function deleteRecord(id) {
+  
   setHistory(getHistory().filter(r => r.id !== id));
   renderHistory();
 }
@@ -448,20 +396,6 @@ function clearFilters() {
   renderHistory();
 }
 
-
-function countInLevel(lv) {
-  var total = 0;
-  Object.keys(lv).forEach(function(ym) {
-    Object.keys(lv[ym]).forEach(function(nm) { total += lv[ym][nm].length; });
-  });
-  return '<span style="font-size:.65rem;color:var(--text-muted);margin-left:.2rem">' + total + ' 条</span>';
-}
-
-function countInSub(sub) {
-  var total = 0;
-  Object.keys(sub).forEach(function(nm) { total += sub[nm].length; });
-  return '<span style="font-size:.62rem;color:var(--text-muted);margin-left:.2rem">' + total + ' 条</span>';
-}
 function toggleGroup(gid) {
   var body = document.getElementById(gid);
   if (!body) return;
@@ -469,6 +403,7 @@ function toggleGroup(gid) {
   var title = body.previousElementSibling;
   if (title) title.classList.toggle('collapsed');
 }
+
 function loadHistoryById(id) {
   var h = getHistory();
   var rec = h.find(function(x) { return x.id === id; });
@@ -511,9 +446,9 @@ function renderHistory() {
   var html = '';
   levelOrder.forEach(function(lv) {
     if (!groups[lv]) return;
-    var lvgid = "glv_" + lv;
+    var lvgid = 'glv_' + lv;
     html += '<div class="hist-group">'
-      + '<div class="hist-group-title" onclick="toggleGroup(\'' + lvgid + '\')">'
+      + '<div class="hist-group-title" onclick="toggleGroup(' + "'" + lvgid + "'" + ')">'
       + '<span class="g-arrow">▼</span>'
       + '<span class="g-tag level">' + escHtml(lv) + '</span>'
       + countInLevel(groups[lv])
@@ -521,9 +456,9 @@ function renderHistory() {
       + '<div class="hist-group-body" id="' + lvgid + '">';
     var ymMap = groups[lv];
     Object.keys(ymMap).sort(function(a,b){return b.localeCompare(a)}).forEach(function(ym) {
-      var ymgid = "gym_" + lv + "_" + ym;
+      var ymgid = 'gym_' + lv + '_' + ym;
       html += '<div class="hist-group" style="margin-left:.8rem">'
-        + '<div class="hist-group-title" onclick="toggleGroup(\'' + ymgid + '\')" style="font-size:.7rem">'
+        + '<div class="hist-group-title" onclick="toggleGroup(' + "'" + ymgid + "'" + ')" style="font-size:.7rem">'
         + '<span class="g-arrow">▼</span>'
         + '<span class="g-tag type">' + escHtml(ym) + '</span>'
         + countInSub(ymMap[ym])
@@ -534,11 +469,11 @@ function renderHistory() {
         ymMap[ym][nm].forEach(function(r) { items.push(r); });
       });
       items.forEach(function(r) {
-        html += '<div class="history-item" onclick="loadHistoryById(' + JSON.stringify(r.id) + ')">'
+        html += '<div class="history-item" onclick="loadHistoryById(' + "'" + r.id + "'" + ')">'
           + '<span class="hi-id">' + escHtml(r.id) + '</span>'
           + '<span class="hi-date">' + (r.date||'') + '</span>'
           + '<span class="hi-preview">' + escHtml((r.paragraphs?.[0]||'').substring(0,25)) + '</span>'
-          + '<button class="hi-del" onclick="event.stopPropagation();deleteHistoryById(' + JSON.stringify(r.id) + ')">✕</button>'
+          + '<button class="hi-del" onclick="event.stopPropagation();deleteHistoryById(' + "'" + r.id + "'" + ')">✕</button>'
           + '</div>';
       });
       html += '</div></div>';
@@ -547,6 +482,21 @@ function renderHistory() {
   });
   list.innerHTML = html;
 }
+
+function countInLevel(lv) {
+  var total = 0;
+  Object.keys(lv).forEach(function(ym) {
+    Object.keys(lv[ym]).forEach(function(nm) { total += lv[ym][nm].length; });
+  });
+  return '<span style="font-size:.65rem;color:var(--text-muted);margin-left:.2rem">' + total + ' 条</span>';
+}
+
+function countInSub(sub) {
+  var total = 0;
+  Object.keys(sub).forEach(function(nm) { total += sub[nm].length; });
+  return '<span style="font-size:.62rem;color:var(--text-muted);margin-left:.2rem">' + total + ' 条</span>';
+}
+
 
 function toggleAnswer(){
   var c=document.getElementById('answerCard');
